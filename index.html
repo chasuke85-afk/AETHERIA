@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHERIA | The Quantum Nexus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;900&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; overflow: hidden; background: #020617; font-family: 'Inter', sans-serif; }
+        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 0; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glow-text { text-shadow: 0 0 30px rgba(99, 102, 241, 0.6); }
+        .loading-screen { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; align-items: center; justify-content: center; transition: opacity 1s ease; }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loading-screen text-indigo-500 font-black tracking-widest uppercase animate-pulse">
+        Initializing Aetheria...
+    </div>
+
+    <div id="ui" class="relative z-10 w-full h-screen flex flex-col items-center justify-between text-white p-8 pointer-events-none opacity-0">
+        <header class="w-full flex justify-between items-center pointer-events-auto">
+            <div class="text-2xl font-black tracking-tighter glow-text uppercase italic">Aetheria</div>
+            <div class="flex space-x-6 text-[10px] tracking-[0.3em] font-light opacity-50">
+                <span>SYSTEM_V.2.6.0</span>
+                <span>STATUS: STABLE</span>
+            </div>
+        </header>
+
+        <main class="text-center">
+            <h1 id="title" class="text-6xl md:text-9xl font-black tracking-tighter mb-4 glow-text">
+                BEYOND<br/><span class="text-indigo-500">REALITY</span>
+            </h1>
+            <p id="desc" class="max-w-xl mx-auto text-sm md:text-base text-slate-400 font-light leading-relaxed tracking-wide opacity-80">
+                AIが生成したこの単一のコードは、あなたのGitHubを未来のポータルへと変貌させます。
+                数学的な美しさと、直感的なインターフェースの融合。
+            </p>
+            <div id="cta" class="mt-10 pointer-events-auto">
+                <button class="px-12 py-4 bg-indigo-600 hover:bg-white hover:text-indigo-900 rounded-full font-bold transition-all duration-500 transform hover:scale-110 shadow-[0_0_50px_rgba(79,70,229,0.5)]">
+                    ENTER THE VOID
+                </button>
+            </div>
+        </main>
+
+        <footer class="w-full flex flex-col md:flex-row justify-between items-end gap-4 pointer-events-auto">
+            <div class="glass p-4 rounded-xl text-[10px] opacity-60 w-full md:w-64">
+                <div class="mb-1 text-indigo-400 font-bold">CORE_LOG</div>
+                Neural network synced. 3D Renderer active. Experience initialized via Gemini-3-Flash.
+            </div>
+            <div class="text-[10px] opacity-40 uppercase tracking-widest pb-2">
+                Designed by AI // 2026 Nexus Project
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- 3D ENGINE (THREE.JS) ---
+        let scene, camera, renderer, sphere, innerSphere, particles;
+
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            // クォンタム・コア（メインオブジェクト）
+            const geometry = new THREE.IcosahedronGeometry(1.8, 15);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x6366f1,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.2,
+            });
+            sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            // インナーコア（光を放つ中心）
+            const innerGeom = new THREE.SphereGeometry(0.8, 32, 32);
+            const innerMat = new THREE.MeshPhongMaterial({
+                color: 0x4f46e5,
+                emissive: 0x4338ca,
+                shininess: 100,
+                transparent: true,
+                opacity: 0.8
+            });
+            innerSphere = new THREE.Mesh(innerGeom, innerMat);
+            scene.add(innerSphere);
+
+            // パーティクル・フィールド
+            const pGeom = new THREE.BufferGeometry();
+            const pCount = 1500;
+            const posArray = new Float32Array(pCount * 3);
+            for(let i = 0; i < pCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 15;
+            }
+            pGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const pMat = new THREE.PointsMaterial({ size: 0.015, color: 0xffffff, transparent: true, opacity: 0.5 });
+            particles = new THREE.Points(pGeom, pMat);
+            scene.add(particles);
+
+            // ライト設定
+            const pLight = new THREE.PointLight(0x818cf8, 2);
+            pLight.position.set(5, 5, 5);
+            scene.add(pLight);
+            scene.add(new THREE.AmbientLight(0x1e1b4b, 1));
+
+            camera.position.z = 5;
+        }
+
+        // --- インタラクション & アニメーション ---
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) / 200;
+            mouseY = (e.clientY - window.innerHeight / 2) / 200;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.001;
+
+            sphere.rotation.y += 0.003;
+            sphere.rotation.x += 0.001;
+            innerSphere.scale.set(
+                1 + Math.sin(time * 2) * 0.1,
+                1 + Math.sin(time * 2) * 0.1,
+                1 + Math.sin(time * 2) * 0.1
+            );
+
+            particles.rotation.y -= 0.0005;
+            
+            // マウス追従
+            scene.rotation.y += (mouseX - scene.rotation.y) * 0.05;
+            scene.rotation.x += (mouseY - scene.rotation.x) * 0.05;
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 画面表示の演出 ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = () => {
+            init3D();
+            animate();
+
+            // ローディング解除とフェードイン
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loader').style.display = 'none';
+                    gsap.to("#ui", { opacity: 1, duration: 2 });
+                    gsap.from("#title", { y: 100, opacity: 0, duration: 1.5, ease: "power4.out" });
+                    gsap.from("#desc", { opacity: 0, duration: 2, delay: 0.5 });
+                    gsap.from("#cta", { scale: 0, opacity: 0, duration: 1, delay: 1, ease: "back.out(1.7)" });
+                }, 1000);
+            }, 2000);
+        };
+    </script>
+</body>
+</html>
