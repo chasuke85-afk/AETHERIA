@@ -3,117 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRYSTAL BIOME | Organic Light</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <title>AURORA VELOCITY | Ultra Fast</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
-        .instruction {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            color: rgba(255,255,255,0.4); font-family: sans-serif; font-size: 12px;
-            letter-spacing: 2px; pointer-events: none; text-transform: uppercase;
+        body { margin: 0; background: #000; overflow: hidden; }
+        canvas { display: block; filter: blur(1px) contrast(1.2); }
+        .ui {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-family: sans-serif; pointer-events: none;
+            text-align: center; letter-spacing: 0.5em; opacity: 0.5;
         }
     </style>
 </head>
 <body>
-    <div class="instruction">Move your mouse to breathe life / Click to bloom</div>
+    <div class="ui">AURORA FLOW</div>
+    <canvas id="c"></canvas>
 
     <script>
-        // 数学的な美しさと「単純な凄さ」を両立するコード
-        let particles = [];
-        const numParticles = 120;
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        let w, h, particles = [];
 
-        function setup() {
-            createCanvas(windowWidth, windowHeight);
-            angleMode(DEGREES);
-            // 粒子を初期化
-            for (let i = 0; i < numParticles; i++) {
-                particles.push(new BioParticle(i));
+        // 圧倒的軽さの秘密：計算を極限まで削ぎ落としたロジック
+        function init() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            particles = [];
+            for(let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    history: []
+                });
             }
         }
 
         function draw() {
-            // 残像を残して幻想的な光の筋を作る
-            background(0, 0, 15, 25); 
+            // 背景を真っ黒にせず、少しだけ残像を残す（ここが美しさのキモ）
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, w, h);
 
-            translate(width / 2, height / 2);
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
 
-            for (let p of particles) {
-                p.update();
-                p.display();
-            }
-        }
+                // 画面端で跳ね返る
+                if(p.x < 0 || p.x > w) p.vx *= -1;
+                if(p.y < 0 || p.y > h) p.vy *= -1;
 
-        class BioParticle {
-            constructor(id) {
-                this.id = id;
-                this.reset();
-            }
-
-            reset() {
-                this.angle = random(360);
-                this.radius = random(50, 150);
-                this.size = random(2, 8);
-                this.speed = random(0.2, 0.8);
-                this.color = color(
-                    random(100, 255), // Red
-                    random(150, 255), // Green
-                    random(200, 255), // Blue
-                    150
-                );
-                this.offset = random(1000);
-            }
-
-            update() {
-                // マウスの位置によって生命の動きが変化
-                let mouseFactor = map(dist(mouseX, mouseY, width/2, height/2), 0, width, 2, 0.1);
-                this.angle += this.speed * mouseFactor;
-                
-                // ノイズ関数による有機的な揺らぎ
-                let n = noise(this.angle * 0.01, this.offset + frameCount * 0.01);
-                this.currentRadius = this.radius + map(n, 0, 1, -50, 150);
-                
-                // 呼吸するようなサイズの変化
-                this.currentSize = this.size * (1 + sin(frameCount * 2 + this.id) * 0.5);
-            }
-
-            display() {
-                push();
-                let x = cos(this.angle) * this.currentRadius;
-                let y = sin(this.angle) * this.currentRadius;
-
-                // 粒子本体の輝き
-                noStroke();
-                fill(this.color);
-                drawingContext.shadowBlur = 15;
-                drawingContext.shadowColor = this.color;
-                ellipse(x, y, this.currentSize);
-
-                // 粒子同士を繋ぐ繊細な糸（神経ネットワークのような美しさ）
-                stroke(this.color);
-                strokeWeight(0.2);
-                for (let other of particles) {
-                    let d = dist(x, y, cos(other.angle) * other.currentRadius, sin(other.angle) * other.currentRadius);
-                    if (d < 100) {
-                        line(x, y, cos(other.angle) * other.currentRadius, sin(other.angle) * other.currentRadius);
-                    }
+                // マウスに向かって少しだけ引き寄せられる（重くない計算）
+                if(window.mx) {
+                    p.vx += (window.mx - p.x) * 0.0001;
+                    p.vy += (window.my - p.y) * 0.0001;
                 }
-                pop();
-            }
+
+                // 虹色のグラデーションを描画
+                ctx.beginPath();
+                ctx.strokeStyle = `hsla(${frameCount + i * 5}, 80%, 60%, 0.8)`;
+                ctx.lineWidth = 2;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.vx * 10, p.y - p.vy * 10);
+                ctx.stroke();
+            });
+
+            frameCount++;
+            requestAnimationFrame(draw);
         }
 
-        function mousePressed() {
-            // クリックで一斉に色が変化し、生命が弾ける
-            for (let p of particles) {
-                p.color = color(random(200, 255), random(50, 150), random(100, 255), 180);
-                p.radius += 100;
-                setTimeout(() => p.radius -= 100, 500);
-            }
-        }
-
-        function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
-        }
+        let frameCount = 0;
+        window.addEventListener('mousemove', e => { window.mx = e.clientX; window.my = e.clientY; });
+        window.addEventListener('resize', init);
+        
+        init();
+        draw();
     </script>
 </body>
 </html>
